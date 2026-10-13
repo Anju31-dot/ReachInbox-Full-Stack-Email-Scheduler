@@ -27,6 +27,17 @@ type User = { id: string; email: string; name: string; picture: string | null; q
 type SlackStatus = { connected: boolean; integration: { teamName: string | null; teamId: string; channelId: string | null } | null };
 const emptyForm = { recipients: '', subject: '', body: '', scheduledAt: '' };
 
+function isAuthResponse(value: unknown): value is { user: Omit<User, 'queueAdmin'>; queueAdmin: boolean } {
+  if (!value || typeof value !== 'object') return false;
+  const response = value as Record<string, unknown>;
+  if (!response.user || typeof response.user !== 'object' || typeof response.queueAdmin !== 'boolean') return false;
+  const user = response.user as Record<string, unknown>;
+  return typeof user.id === 'string'
+    && typeof user.email === 'string'
+    && typeof user.name === 'string'
+    && (typeof user.picture === 'string' || user.picture === null);
+}
+
 function App() {
   const [emails, setEmails] = useState<Email[]>([]);
   const [user, setUser] = useState<User | null>(null);
@@ -46,17 +57,21 @@ function App() {
 
   const loadEmails = useCallback(async (query = '') => {
     try {
-      const response = await axios.get<Email[]>(query ? '/api/emails/search' : '/api/emails', { params: query ? { q: query } : undefined });
+      const response = await axios.get<unknown>(query ? '/api/emails/search' : '/api/emails', { params: query ? { q: query } : undefined });
+      if (!Array.isArray(response.data)) throw new Error('Backend returned an invalid email list.');
       setEmails(response.data);
     } catch {
-      setError('Cannot reach the backend. Start PostgreSQL, Redis, and the backend server.');
+      setError('Could not load emails. Check the backend URL and try again.');
     }
   }, []);
 
   useEffect(() => {
     const authError = new URLSearchParams(window.location.search).get('authError');
     if (authError) setError(`Authentication could not be completed (${authError}). Check your OAuth app settings and try again.`);
-    void axios.get<{ user: Omit<User, 'queueAdmin'>; queueAdmin: boolean }>('/api/auth/me').then(({ data }) => setUser({ ...data.user, queueAdmin: data.queueAdmin })).catch(() => setUser(null)).finally(() => setAuthLoading(false));
+    void axios.get<unknown>('/api/auth/me').then(({ data }) => {
+      if (!isAuthResponse(data)) throw new Error('Backend returned an invalid session response.');
+      setUser({ ...data.user, queueAdmin: data.queueAdmin });
+    }).catch(() => setUser(null)).finally(() => setAuthLoading(false));
     void axios.get<Integrations>('/api/integrations').then(({ data }) => setIntegrations(data)).catch(() => setError('Unable to load integration configuration.'));
   }, []);
 
