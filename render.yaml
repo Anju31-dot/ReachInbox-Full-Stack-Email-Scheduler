@@ -1,4 +1,4 @@
-# Optional Render Blueprint. After sync, set FRONTEND_URL, Google OAuth, and Ethereal SMTP in the dashboard.
+# Optional Render Blueprint. After sync, set Google OAuth and Ethereal SMTP credentials in the dashboard.
 services:
   - type: web
     name: reachinbox-api
@@ -25,7 +25,7 @@ services:
           name: reachinbox-redis
           property: connectionString
       - key: FRONTEND_URL
-        sync: false
+        value: https://reach-inbox-full-stack-email-schedu.vercel.app
       - key: JWT_SECRET
         generateValue: true
       - key: GOOGLE_CLIENT_ID
@@ -33,7 +33,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: GOOGLE_CALLBACK_URL
-        sync: false
+        value: https://reachinbox-api-1zw9.onrender.com/api/auth/google/callback
       - key: ETHEREAL_USER
         sync: false
       - key: ETHEREAL_PASS

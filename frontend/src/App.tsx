@@ -72,7 +72,7 @@ function App() {
       if (!isAuthResponse(data)) throw new Error('Backend returned an invalid session response.');
       setUser({ ...data.user, queueAdmin: data.queueAdmin });
     }).catch(() => setUser(null)).finally(() => setAuthLoading(false));
-    void axios.get<Integrations>('/api/integrations').then(({ data }) => setIntegrations(data)).catch(() => setError('Unable to load integration configuration.'));
+    void axios.get<Integrations>('/api/integrations').then(({ data }) => setIntegrations(data)).catch(() => setError('Unable to load integration configuration. Check the backend URL and its CORS FRONTEND_URL setting.'));
   }, []);
 
   useEffect(() => {

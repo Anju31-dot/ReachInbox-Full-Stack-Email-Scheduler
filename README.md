@@ -99,11 +99,13 @@ npm --prefix .\frontend run build
 
 The Render Blueprint runs the BullMQ worker in the API web service, avoiding a separate paid background worker. Both HTTP and queue processing require the web service to be running; Render's free web services can spin down when idle, so scheduled jobs are not guaranteed to run continuously. The start command applies pending Prisma migrations before starting the API because Render pre-deploy commands require a paid service. Prisma `migrate deploy` applies pending migrations without resetting the database.
 
-In Render, set `FRONTEND_URL` to the deployed Vercel origin (no trailing slash), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL=https://<your-render-api>/api/auth/google/callback`. The Blueprint sets `ENABLE_HTTP=true` and `ENABLE_WORKER=true`, and generates `JWT_SECRET`. Set `ETHEREAL_USER` and `ETHEREAL_PASS` to enable test email delivery; optional Slack/Elasticsearch settings enable those integrations.
+The Render Blueprint sets `FRONTEND_URL=https://reach-inbox-full-stack-email-schedu.vercel.app` and `GOOGLE_CALLBACK_URL=https://reachinbox-api-1zw9.onrender.com/api/auth/google/callback`. For an existing service, sync the Blueprint to update these non-secret values, or set them manually under the `reachinbox-api` service's Environment settings. The Blueprint sets `ENABLE_HTTP=true` and `ENABLE_WORKER=true`, and generates `JWT_SECRET`. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Render to enable Google sign-in. For Google Cloud setup, create an OAuth client of type **Web application**, add the callback URL above as an authorized redirect URI, and configure the consent screen (including test users while in testing mode). This application uses a server-side OAuth flow and does not require a Google JavaScript origin.
+
+Email delivery uses Nodemailer with Ethereal SMTP (`smtp.ethereal.email`, port `587`, non-TLS connection upgrade via STARTTLS). Create a test account at Ethereal and set its `ETHEREAL_USER` and `ETHEREAL_PASS` credentials in Render to enable test-message delivery. Ethereal messages are previews and do not reach real inboxes. Do not put OAuth or SMTP credentials in the Blueprint or source control.
 
 In Vercel, set the project root to `frontend`, framework preset to Vite, build command to `npm run build`, output directory to `dist`, and `VITE_API_URL=https://<your-render-api>` (no trailing slash). Redeploy after setting/changing this variable.
 
-In Google Cloud Console, add the exact `GOOGLE_CALLBACK_URL` as an authorized redirect URI and the Vercel origin as an authorized JavaScript origin. The Google OAuth consent screen must also permit the intended account(s). If Slack OAuth is used, set its redirect URL to `https://<your-render-api>/api/slack/callback`.
+If Slack OAuth is used, set its redirect URL to `https://<your-render-api>/api/slack/callback`.
 
 Apply `render.yaml` from the repo root via Render Blueprint for Postgres, Redis, and the combined API/worker web service.
 
