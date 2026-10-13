@@ -92,21 +92,20 @@ npm --prefix .\frontend run build
 
 | Component | Host | Root directory | Build | Start / output |
 | --- | --- | --- | --- | --- |
-| API | Render Web Service | `backend` | `npm install && npm run build` | `npm start` — health check `/api/health` |
-| Queue worker | Render Background Worker | `backend` | same as API | `npm run start:worker` with `ENABLE_HTTP=false`, `ENABLE_WORKER=true` |
+| API and queue worker | Render Web Service | `backend` | `npm install --include=dev && npm run build` | `npm run prisma:migrate:deploy && npm start` — health check `/api/health` |
 | PostgreSQL | Render PostgreSQL (or other managed Postgres) | — | — | set `DATABASE_URL` |
 | Redis | Render Key Value or other Redis-compatible service | — | — | set `REDIS_URL` (preferred) or `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` |
 | Frontend | Vercel | `frontend` | `npm run build` | output `dist` |
 
-Run `npx prisma migrate deploy` once against production Postgres (Render **Pre-Deploy Command** on the API service, or a one-off shell). Do not reset the database.
+The Render Blueprint runs the BullMQ worker in the API web service, avoiding a separate paid background worker. Both HTTP and queue processing require the web service to be running; Render's free web services can spin down when idle, so scheduled jobs are not guaranteed to run continuously. The start command applies pending Prisma migrations before starting the API because Render pre-deploy commands require a paid service. Prisma `migrate deploy` applies pending migrations without resetting the database.
 
-Set on the API and worker: `NODE_ENV=production`, `FRONTEND_URL=https://<your-vercel-domain>`, `JWT_SECRET` (≥32 chars, identical on API and worker), Google OAuth vars, optional Ethereal/Slack/Elasticsearch. On the API only: `ENABLE_WORKER=false`. On the worker: `ENABLE_HTTP=false`.
+In Render, set `FRONTEND_URL` to the deployed Vercel origin (no trailing slash), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL=https://<your-render-api>/api/auth/google/callback`. The Blueprint sets `ENABLE_HTTP=true` and `ENABLE_WORKER=true`, and generates `JWT_SECRET`. Set `ETHEREAL_USER` and `ETHEREAL_PASS` to enable test email delivery; optional Slack/Elasticsearch settings enable those integrations.
 
-Set on Vercel: `VITE_API_URL=https://<your-render-api-domain>` (no trailing slash). Redeploy the frontend after changing it.
+In Vercel, set the project root to `frontend`, framework preset to Vite, build command to `npm run build`, output directory to `dist`, and `VITE_API_URL=https://<your-render-api>` (no trailing slash). Redeploy after setting/changing this variable.
 
-Google Cloud Console: add authorized redirect URI `https://<render-api>/api/auth/google/callback` and authorized JavaScript origin `https://<vercel-domain>`. Slack app: set redirect URL `https://<render-api>/api/slack/callback`.
+In Google Cloud Console, add the exact `GOOGLE_CALLBACK_URL` as an authorized redirect URI and the Vercel origin as an authorized JavaScript origin. The Google OAuth consent screen must also permit the intended account(s). If Slack OAuth is used, set its redirect URL to `https://<your-render-api>/api/slack/callback`.
 
-Optional: apply `render.yaml` from the repo root via Render Blueprint for Postgres, Redis, API, and worker.
+Apply `render.yaml` from the repo root via Render Blueprint for Postgres, Redis, and the combined API/worker web service.
 
 ## GitHub submission checklist
 
