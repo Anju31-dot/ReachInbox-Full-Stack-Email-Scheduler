@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Clock3, ExternalLink, LogOut, Mail, Plus, Search, Send, TriangleAlert } from 'lucide-react';
+import { apiUrl } from './api-client';
 import { parseRecipientCsv } from './recipient-import';
 
 type Email = {
@@ -172,7 +173,7 @@ function App() {
         <h1>Schedule with confidence.</h1>
         <p className="muted">Sign in with Google to manage your email queue and workspace integrations.</p>
         {error && <div className="error-banner">{error}</div>}
-        <a className="primary-button login-button" href="/api/auth/google">Continue with Google <ExternalLink size={15} /></a>
+        <a className="primary-button login-button" href={apiUrl('/api/auth/google')}>Continue with Google <ExternalLink size={15} /></a>
         {!integrations?.googleOAuth && <p className="integration-footnote">Google OAuth is not configured on the backend.</p>}
       </section>
     </main>
@@ -182,7 +183,7 @@ function App() {
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-icon"><Mail size={19} /></span>ReachInbox<span className="brand-subtitle">SCHEDULER</span></a>
-        <div className="user-menu">{user.picture && <img src={user.picture} alt="" />}<span>{user.name}</span>{user.queueAdmin && <a className="queue-link" href="/admin/queues" target="_blank" rel="noreferrer">Queue monitor <span>↗</span></a>}<button className="icon-button" onClick={() => void logout()} aria-label="Sign out"><LogOut size={15} /></button></div>
+        <div className="user-menu">{user.picture && <img src={user.picture} alt="" />}<span>{user.name}</span>{user.queueAdmin && <a className="queue-link" href={apiUrl('/admin/queues')} target="_blank" rel="noreferrer">Queue monitor <span>↗</span></a>}<button className="icon-button" onClick={() => void logout()} aria-label="Sign out"><LogOut size={15} /></button></div>
       </header>
       <section className="intro">
         <div><p className="eyebrow">EMAIL CAMPAIGNS</p><h1>Scheduled emails</h1><p className="muted">Compose once. Deliver at the right time.</p></div>
@@ -220,7 +221,7 @@ function App() {
               <div className="slack-controls"><input value={slackChannel} onChange={(event) => setSlackChannel(event.target.value)} placeholder="Channel ID (for example C0123456789)" /><button onClick={() => void saveSlackChannel()}>Save channel</button><button className="disconnect" onClick={() => void disconnectSlack()}>Disconnect</button></div>
               <span className="muted-small">Invite the ReachInbox bot to the channel before saving its ID.</span>
             </> : integrations?.slackOAuth
-              ? <a className="slack-connect" href="/api/slack/connect">Connect a Slack workspace <ExternalLink size={13} /></a>
+              ? <a className="slack-connect" href={apiUrl('/api/slack/connect')}>Connect a Slack workspace <ExternalLink size={13} /></a>
               : <span className="muted-small">Add Slack OAuth credentials to enable workspace connection.</span>}
             {slackMessage && <span className="muted-small">{slackMessage}</span>}
           </div>

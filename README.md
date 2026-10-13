@@ -88,6 +88,26 @@ npm --prefix .\backend test
 npm --prefix .\frontend run build
 ```
 
+## Production deployment
+
+| Component | Host | Root directory | Build | Start / output |
+| --- | --- | --- | --- | --- |
+| API | Render Web Service | `backend` | `npm install && npm run build` | `npm start` — health check `/api/health` |
+| Queue worker | Render Background Worker | `backend` | same as API | `npm run start:worker` with `ENABLE_HTTP=false`, `ENABLE_WORKER=true` |
+| PostgreSQL | Render PostgreSQL (or other managed Postgres) | — | — | set `DATABASE_URL` |
+| Redis | Render Key Value or other Redis-compatible service | — | — | set `REDIS_URL` (preferred) or `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` |
+| Frontend | Vercel | `frontend` | `npm run build` | output `dist` |
+
+Run `npx prisma migrate deploy` once against production Postgres (Render **Pre-Deploy Command** on the API service, or a one-off shell). Do not reset the database.
+
+Set on the API and worker: `NODE_ENV=production`, `FRONTEND_URL=https://<your-vercel-domain>`, `JWT_SECRET` (≥32 chars, identical on API and worker), Google OAuth vars, optional Ethereal/Slack/Elasticsearch. On the API only: `ENABLE_WORKER=false`. On the worker: `ENABLE_HTTP=false`.
+
+Set on Vercel: `VITE_API_URL=https://<your-render-api-domain>` (no trailing slash). Redeploy the frontend after changing it.
+
+Google Cloud Console: add authorized redirect URI `https://<render-api>/api/auth/google/callback` and authorized JavaScript origin `https://<vercel-domain>`. Slack app: set redirect URL `https://<render-api>/api/slack/callback`.
+
+Optional: apply `render.yaml` from the repo root via Render Blueprint for Postgres, Redis, API, and worker.
+
 ## GitHub submission checklist
 
 1. Keep `backend/.env` local; commit `.env.example`, source, schema, and migrations only.

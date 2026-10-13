@@ -31,17 +31,49 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 const encryptionSecret = process.env.JWT_SECRET;
 const queueAdmins = new Set((process.env.QUEUE_DASHBOARD_ADMIN_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean));
 const queueName = 'scheduled-emails';
+const enableHttp = process.env.ENABLE_HTTP !== 'false';
+const enableWorker = process.env.ENABLE_WORKER !== 'false';
 const prisma = new PrismaClient();
-const redis = new IORedis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: positiveInteger(process.env.REDIS_PORT, 6379),
-  password: process.env.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-});
+
+function createRedisConnection(): IORedis {
+  const redisUrl = process.env.REDIS_URL?.trim();
+  if (redisUrl) {
+    return new IORedis(redisUrl, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      tls: redisUrl.startsWith('rediss://') ? {} : undefined,
+    });
+  }
+  return new IORedis({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: positiveInteger(process.env.REDIS_PORT, 6379),
+    password: process.env.REDIS_PASSWORD || undefined,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+  });
+}
+
+const redis = createRedisConnection();
+
+function sessionCookieOptions(path = '/'): {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'lax' | 'none';
+  path: string;
+  maxAge?: number;
+} {
+  const production = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: production,
+    sameSite: production ? 'none' : 'lax',
+    path,
+  };
+}
 
 const queue = new Queue(queueName, { connection: redis });
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors({ origin: frontendUrl, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -83,21 +115,13 @@ async function setSessionCookie(res: Response, userId: string): Promise<void> {
   const token = randomBytes(32).toString('base64url');
   await redis.set(`session:${createHash('sha256').update(token).digest('hex')}`, userId, 'EX', 7 * 24 * 60 * 60);
   res.cookie('reachinbox_session', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
+    ...sessionCookieOptions('/'),
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
 
 function clearSessionCookie(res: Response): void {
-  res.clearCookie('reachinbox_session', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-  });
+  res.clearCookie('reachinbox_session', sessionCookieOptions('/'));
 }
 
 async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -190,10 +214,7 @@ app.get('/api/auth/google', async (_req, res, next) => {
     const browserNonce = randomBytes(32).toString('base64url');
     await redis.set(`oauth:google:${state}`, browserNonce, 'EX', 600, 'NX');
     res.cookie('reachinbox_google_oauth', browserNonce, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/api/auth/google/callback',
+      ...sessionCookieOptions('/api/auth/google/callback'),
       maxAge: 10 * 60 * 1000,
     });
     res.redirect(client.generateAuthUrl({
@@ -213,7 +234,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
   try {
     const expectedNonce = state ? await redis.getdel(`oauth:google:${state}`) : null;
     const actualNonce = readCookie(req, 'reachinbox_google_oauth');
-    res.clearCookie('reachinbox_google_oauth', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/api/auth/google/callback' });
+    res.clearCookie('reachinbox_google_oauth', sessionCookieOptions('/api/auth/google/callback'));
     if (!code || !expectedNonce || !actualNonce || expectedNonce.length !== actualNonce.length
       || !timingSafeEqual(Buffer.from(expectedNonce), Buffer.from(actualNonce))) {
       res.redirect(`${frontendUrl}/?authError=google_state`);
@@ -279,10 +300,7 @@ app.get('/api/slack/connect', requireAuth, async (req, res, next) => {
     const browserNonce = randomBytes(32).toString('base64url');
     await redis.set(`oauth:slack:${state}`, JSON.stringify({ userId: req.userId, browserNonce }), 'EX', 600, 'NX');
     res.cookie('reachinbox_slack_oauth', browserNonce, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/api/slack/callback',
+      ...sessionCookieOptions('/api/slack/callback'),
       maxAge: 10 * 60 * 1000,
     });
     const params = new URLSearchParams({
@@ -303,7 +321,7 @@ app.get('/api/slack/callback', async (req, res) => {
   try {
     const oauthValue = state ? await redis.getdel(`oauth:slack:${state}`) : null;
     const actualNonce = readCookie(req, 'reachinbox_slack_oauth');
-    res.clearCookie('reachinbox_slack_oauth', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/api/slack/callback' });
+    res.clearCookie('reachinbox_slack_oauth', sessionCookieOptions('/api/slack/callback'));
     const savedState = oauthValue ? JSON.parse(oauthValue) as { userId?: string; browserNonce?: string } : null;
     const userId = savedState?.userId;
     const expectedNonce = savedState?.browserNonce || '';
@@ -588,7 +606,7 @@ redis.call('SET', KEYS[2], now, 'PX', math.max(spacing * 2, 60000))
 return 0
 `;
 
-const worker = new Worker<{ emailId: string }>(queueName, async (job: Job<{ emailId: string }>) => {
+async function processEmailJob(job: Job<{ emailId: string }>): Promise<void> {
   const email = await prisma.email.findUnique({ where: { id: job.data.emailId } });
   if (!email || email.status !== 'SCHEDULED') return;
   if (!process.env.ETHEREAL_USER || !process.env.ETHEREAL_PASS) {
@@ -651,7 +669,11 @@ const worker = new Worker<{ emailId: string }>(queueName, async (job: Job<{ emai
     await indexEmail(email.id).catch((indexError: unknown) => console.error('Elasticsearch indexing failed:', indexError));
     throw error;
   }
-}, { connection: redis, concurrency });
+}
+
+const worker = enableWorker
+  ? new Worker<{ emailId: string }>(queueName, processEmailJob, { connection: redis, concurrency })
+  : null;
 
 async function indexEmail(id: string): Promise<void> {
   const node = process.env.ELASTICSEARCH_NODE;
@@ -749,15 +771,24 @@ async function recoverQueue(): Promise<void> {
 
 async function start(): Promise<void> {
   await Promise.all([prisma.$connect(), redis.ping()]);
-  await recoverQueue();
-  app.listen(port, () => console.info(`ReachInbox API listening on http://localhost:${port}`));
+  if (enableWorker) await recoverQueue();
+  if (enableHttp) {
+    app.listen(port, () => console.info(`ReachInbox API listening on port ${port}`));
+  } else if (enableWorker) {
+    console.info('ReachInbox queue worker running (HTTP server disabled).');
+  } else {
+    throw new Error('Set ENABLE_HTTP and/or ENABLE_WORKER; both cannot be false.');
+  }
 }
 
-worker.on('failed', (job, error) => console.error(`Email job ${job?.id || 'unknown'} failed:`, error.message));
-worker.on('error', (error) => console.error('Email worker error:', error));
+if (worker) {
+  worker.on('failed', (job, error) => console.error(`Email job ${job?.id || 'unknown'} failed:`, error.message));
+  worker.on('error', (error) => console.error('Email worker error:', error));
+}
+
 start().catch(async (error: unknown) => {
   console.error('Startup failed. Confirm PostgreSQL and Redis are running and DATABASE_URL is valid.', error);
-  await worker.close().catch(() => undefined);
+  if (worker) await worker.close().catch(() => undefined);
   await queue.close().catch(() => undefined);
   await prisma.$disconnect().catch(() => undefined);
   process.exitCode = 1;
@@ -765,6 +796,11 @@ start().catch(async (error: unknown) => {
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
-    void Promise.all([worker.close(), queue.close(), redis.quit(), prisma.$disconnect()]).finally(() => process.exit(0));
+    void Promise.all([
+      worker ? worker.close() : Promise.resolve(),
+      queue.close(),
+      redis.quit(),
+      prisma.$disconnect(),
+    ]).finally(() => process.exit(0));
   });
 }
