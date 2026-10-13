@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root{font-family:'DM Sans',sans-serif;color:#e7eaf0;background:#080b11;font-synthesis:none;text-rendering:optimizeLegibility;font-smooth:always;font-weight:400}
+*{box-sizing:border-box}
+body{margin:0;min-width:350px;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#142131 0,transparent 48%),#080b11}
+button,input,textarea{font:inherit}
+.shell{max-width:1370px;margin:0 auto;padding:0 42px}
+.topbar{height:76px;border-bottom:1px solid #1c2430;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#f4f7fa;font-family:Manrope,sans-serif;font-size:19px;font-weight:800;letter-spacing:-.7px}
+.brand-icon{height:31px;width:31px;border-radius:9px;background:#14b878;display:grid;place-items:center;color:#072216}
+.brand-subtitle{font:700 9px 'DM Sans',sans-serif;letter-spacing:1.4px;color:#778394;margin:4px 0 0 5px}
+.queue-link{font-size:12px;color:#aab5c4;text-decoration:none;border:1px solid #252e3a;padding:9px 12px;border-radius:8px}
+.queue-link span{color:#13d68a;margin-left:7px}
+.user-menu{display:flex;align-items:center;gap:11px;color:#aab5c4;font-size:11px}
+.user-menu img{width:27px;height:27px;border-radius:50%}
+.icon-button{display:grid;place-items:center;width:30px;height:30px;border-radius:7px;border:1px solid #293440;background:#0b1017;color:#9da9b8;cursor:pointer}
+.icon-button:hover{color:#22d997;border-color:#169d70}
+.intro{display:flex;align-items:end;justify-content:space-between;padding:36px 0 22px}
+.eyebrow{font-size:10px;color:#17d58a;letter-spacing:1.7px;font-weight:700;margin:0 0 9px}
+h1,h2,h3,p{margin-top:0}
+h1{font:700 28px Manrope,sans-serif;letter-spacing:-1px;margin-bottom:7px;color:#f4f5f8}
+.muted{color:#7d8999;font-size:13px;margin-bottom:0}
+.status-live{font-size:9px;letter-spacing:1.3px;color:#96a4b3;padding:8px 10px;border:1px solid #24332e;border-radius:20px;margin-bottom:4px}
+.status-live span{width:6px;height:6px;border-radius:50%;display:inline-block;background:#16d58a;box-shadow:0 0 10px #16d58a;margin-right:7px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px}
+.card,.stat{background:#10151d;border:1px solid #202934;border-radius:11px}
+.stat{padding:15px 17px;display:flex;align-items:center;gap:13px}
+.stat-icon,.heading-icon{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#22d997;background:#123027}
+.stat-icon svg{width:16px}
+.stat div span{display:block;font-size:10px;color:#8591a0;margin-bottom:3px}
+.stat strong{font:700 20px Manrope,sans-serif;color:#eef2f5}
+.content-grid{display:grid;grid-template-columns:minmax(340px,.87fr) minmax(400px,1.13fr);gap:17px;align-items:start}
+.compose,.emails{padding:20px}
+.card-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:19px}
+.card-heading>div{display:flex;align-items:center;gap:10px}
+.heading-icon{width:29px;height:29px}
+.card-heading h2{font:700 14px Manrope,sans-serif;margin:0;color:#eef2f7}
+.required,.count{font-size:9px;letter-spacing:.8px;color:#768393}
+.count{padding:4px 8px;background:#1c2530;border-radius:15px;letter-spacing:0}
+label{display:block;color:#c5ccd5;font-size:11px;font-weight:600;margin:0 0 15px}
+label span{float:right;font-size:9px;font-weight:400;color:#748191}
+input,textarea{width:100%;display:block;margin-top:7px;background:#0b1017;border:1px solid #293440;border-radius:7px;padding:10px 11px;color:#e7ebf0;outline:none;font-size:11px;resize:vertical}
+input:focus,textarea:focus{border-color:#169d70;box-shadow:0 0 0 2px #0b7d5030}
+input::placeholder,textarea::placeholder{color:#515e6d}
+input[type=datetime-local]{color-scheme:dark}
+.primary-button{width:100%;border:0;border-radius:7px;padding:11px;background:#14b878;color:#061c13;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-top:4px}
+.primary-button:hover{background:#28d792}.primary-button:disabled{opacity:.6;cursor:wait}
+.secondary-button{border:1px solid #293440;border-radius:6px;background:#161f29;color:#cad3dd;padding:7px 9px;font-size:9px;cursor:pointer}
+.secondary-button:hover{border-color:#169d70;color:#42dfa4}
+.import-button{display:inline-block;margin-top:8px}
+.import-message{float:none;display:inline-block;margin:0 0 0 8px;font-size:9px;color:#8f9caa}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.search{display:flex;align-items:center;gap:8px;border:1px solid #293440;border-radius:7px;background:#0b1017;padding:0 10px;color:#6f7d8b;margin-bottom:6px}
+.search input{border:0;box-shadow:none;margin:0;padding:10px 0;background:transparent}
+.status-filters{display:flex;gap:6px;overflow:auto;padding:8px 0}
+.status-filters button{border:1px solid transparent;border-radius:20px;background:transparent;color:#7f8b99;padding:5px 9px;font-size:9px;text-transform:capitalize;cursor:pointer;white-space:nowrap}
+.status-filters button.active{background:#123027;border-color:#1a6348;color:#42dfa4}
+.email-list{max-height:530px;overflow:auto}
+.email-row{padding:15px 2px;border-bottom:1px solid #202832}
+.email-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.email-top h3{font-size:12px;font-weight:600;color:#e2e7ed;margin:0}
+.badge{font-size:9px;text-transform:capitalize;padding:4px 7px;border-radius:20px;white-space:nowrap}
+.badge i{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:5px;background:currentColor}
+.badge.scheduled{color:#6db8ff;background:#142a3d}.badge.sending{color:#ffce70;background:#342a17}.badge.sent{color:#36d99a;background:#123126}.badge.failed{color:#ff8585;background:#351b20}
+.recipients{font-size:10px;color:#8c99a9;margin:7px 0}
+.email-snippet{font-size:10px;color:#677484;line-height:1.5;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin:0}
+.email-bottom{display:flex;justify-content:space-between;gap:10px;color:#687586;font-size:9px;margin-top:9px}
+.failure{color:#ff9292;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.empty{min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:#647080}
+.empty strong{font-size:12px;color:#a3aebb}.empty span{font-size:10px}
+.integration-footnote{font-size:9px;color:#586474;padding-top:10px;margin:0}
+.slack-panel{display:flex;flex-direction:column;gap:8px;padding:12px 0 10px;border-bottom:1px solid #202832}
+.slack-title,.slack-controls{display:flex;align-items:center;gap:8px}
+.slack-title{justify-content:space-between;font-size:10px;color:#c8d0da}
+.slack-connected{color:#36d99a;font-size:9px}
+.muted-small{font-size:9px;color:#768393}
+.slack-controls input{margin:0;min-width:100px;flex:1}
+.slack-controls button{border:1px solid #293440;border-radius:6px;background:#161f29;color:#cad3dd;padding:8px;font-size:9px;white-space:nowrap;cursor:pointer}
+.slack-controls button:hover{border-color:#169d70}
+.slack-controls button.disconnect{color:#ff9292}
+.slack-connect{display:inline-flex;align-items:center;gap:7px;color:#27d695;text-decoration:none;font-size:10px;width:max-content}
+.auth-shell{min-height:100vh;display:grid;place-items:center;padding:22px}
+.auth-card{width:min(440px,100%);padding:36px}
+.auth-card .brand-icon{margin-bottom:24px}
+.auth-card h1{font-size:30px}
+.auth-card .muted{line-height:1.7;margin-bottom:22px}
+.login-button{text-decoration:none}
+.error-banner,.notice{font-size:10px;padding:10px;border-radius:6px;margin-bottom:14px}
+.error-banner{color:#ffb0b0;background:#351b20}.notice{color:#e3bd73;background:#332a18}
+footer{text-align:center;color:#4f5b68;font-size:10px;padding:25px 0 28px}
+@media(max-width:850px){.shell{padding:0 22px}.content-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.shell{padding:0 14px}.intro{padding-top:25px}.stats{gap:8px}.stat{padding:12px 10px}.compose,.emails{padding:15px}.required{font-size:8px}.email-bottom{flex-direction:column}}
